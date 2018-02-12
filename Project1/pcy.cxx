@@ -15,7 +15,7 @@
 #include <unordered_set>
 #include <bitset>
 
-#define NUM_BUCKETS 1000
+#define NUM_BUCKETS 100000
 
 // Input file, retail.txt, is a big dataset with 88k rows. Each row is a
 // basket with some number of elements, encoded as integers.

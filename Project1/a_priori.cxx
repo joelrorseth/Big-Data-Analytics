@@ -6,8 +6,11 @@
 //  Pass 2: Read baskets, count occurrences of pairs whose two
 //          items are frequent themselves
 //
+// This program demonstrates output of the Triangular matrix and Triples
+// approach. You only need one of these, I left both for references=.
+//
 //  Joel Rorseth 104407927
-//  February 10, 2018
+//  February 13, 2018
 //
 
 #include <iostream>
@@ -19,7 +22,6 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <cmath>
-
 
 
 // Input file, retail.txt, is a big dataset with 88k rows. Each row is a
@@ -40,7 +42,6 @@ std::pair<int,int> lin_to_tri_idx(int idx, int n) {
     // Row index
     for( unsigned int x = delta; x < idx; x += delta-- )
         ++i;
-    
     
     // Column index
     delta = n - 1;
@@ -86,7 +87,7 @@ int find_freq_items(const std::string & filename,
 
     // Calculate actual threshold using given percentage threshold
     auto support_cutoff = line_count * (((double) thresh) / 100.0);
-    std::cout << "Items must occur in " << support_cutoff << " baskets\n";
+    //std::cout << "Items must occur in " << support_cutoff << " baskets\n";
 
     // For each distinct item read...
     for (auto it = hist.begin(); it != hist.end(); ++it) {
@@ -117,7 +118,7 @@ void find_pairs_freq_items(const std::string & filename,
     // Approach 1: Triangular matrix / array
     int n = (num_freq_items * (num_freq_items + 1)) / 2;
     int tri_matrix[n] = {0};
-    std::cout << "Triangular matrix is " << n << " by " << n << '\n';
+    //std::cout << "Triangular matrix is " << n << " by " << n << '\n';
     
     // Approach 2: Map for keeping triples
     std::map<std::pair<int,int>, int> pair_hist;
@@ -213,7 +214,7 @@ int main(int argc, char ** argv) {
     std::unordered_set<int> freq_items;
     auto num_freq_items = find_freq_items(filename, freq_items, thresh_percent);
 
-    std::cout << "There are " << num_freq_items << " frequent items\n";
+    //std::cout << "There are " << num_freq_items << " frequent items\n";
 
     // Create condensed lookup table, mapping 0,1,... to frequent_items and vice versa
     // This is a trick to reduce size of triangular matrix to num_freq_items
@@ -224,7 +225,7 @@ int main(int argc, char ** argv) {
     for (auto it = freq_items.begin(); it != freq_items.end(); ++it) {
         
         auto index = std::distance(freq_items.begin(), it);
-        std::cout << *it << " mapped to " << index << "\n";
+        //std::cout << *it << " mapped to " << index << "\n";
         index_to_item_lookup[index] = *it;
         item_to_index_lookup[*it] = index;
         
