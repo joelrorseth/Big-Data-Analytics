@@ -18,8 +18,9 @@
 
 
 // Get string filename for chunk percentage size
-std::string chunk_filename(const int size) {
-    return "temp_" + std::to_string(size) + ".txt";
+std::string chunk_filename(const std::string & filename, const int size) {
+    //return "temp_" + std::to_string(size) + ".txt";
+    return "percent" + std::to_string(size) + '_' + filename;
 }
 
 
@@ -48,7 +49,7 @@ void create_temp_chunk_files(const std::string & filename,
     
     for (const auto size: chunk_sizes) {
         
-        out_file.open(chunk_filename(size));
+        out_file.open(chunk_filename(filename, size));
         
         // The number of lines in this chunk size of the original file
         int chunk_lines = baskets * ((double) size / 100.0);
@@ -63,10 +64,11 @@ void create_temp_chunk_files(const std::string & filename,
 
 
 // Delete all the temporary chunk files from the directory
-void delete_temp_chunk_files(std::vector<int> & chunk_sizes) {
+void delete_temp_chunk_files(const std::string & filename,
+                             const std::vector<int> & chunk_sizes) {
 
     for (const auto size: chunk_sizes)
-        std::remove(chunk_filename(size).c_str());
+        std::remove(chunk_filename(filename, size).c_str());
 }
 
 
@@ -78,7 +80,7 @@ int main(int argc, char ** argv) {
         return 1;
     }
     
-    const std::string input_file{argv[1]};
+    const std::string input_filename{argv[1]};
     const std::string a_priori_file{argv[2]};
     const std::string pcy_file{argv[3]};
     const std::vector<std::string> algorithms{a_priori_file, pcy_file};
@@ -87,7 +89,7 @@ int main(int argc, char ** argv) {
     std::vector<int> chunk_sizes{1,5,10,20,30,40,50,60,70,80,90,100};
     
     // Generate chunked files to pass to algorithm
-    create_temp_chunk_files(input_file, chunk_sizes);
+    create_temp_chunk_files(input_filename, chunk_sizes);
     
     // For each tested support threshold, derive a performance line chart
     for (const auto thresh: thresholds) {
@@ -95,7 +97,7 @@ int main(int argc, char ** argv) {
         // Initialize new line chart for Support Threshold: <thresh>%
         Gnuplot gp;
         const std::string title = "Support Threshold: " + std::to_string(thresh) + "%";
-        const std::string filename = "./study_threshold_" + std::to_string(thresh) + ".png";
+        const std::string pic_filename = "./study_threshold_" + std::to_string(thresh) + ".png";
         
         gp << "set title \"" << title << "\"\nset xrange[0:100]\n";
         gp << "set xlabel \"Dataset Size\"\nset ylabel \"Runtime (ms)\"\n";
@@ -115,11 +117,12 @@ int main(int argc, char ** argv) {
              
                 // Pass entire chunk to frequent itemset miner
                 const auto cmd = "g++-7 -std=c++17 -o miner " + algorithm + " && ./miner "
-                + chunk_filename(size) + ' ' + std::to_string(thresh);
+                    + chunk_filename(input_filename, size) + ' ' + std::to_string(thresh);
                 
                 // Start timer
                 const auto start = std::chrono::high_resolution_clock::now();
                 
+                // Execute 'cmd'
                 system(cmd.c_str());
                 
                 // End timer upon return
@@ -127,7 +130,7 @@ int main(int argc, char ** argv) {
                 
                 // Obtain time difference (runtime taken to perform mining)
                 const std::chrono::milliseconds dif =
-                std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
+                    std::chrono::duration_cast<std::chrono::milliseconds>(finish - start);
                 const double dif_mseconds = dif.count();
                 
                 // Put {size, dif} into points vector
@@ -144,5 +147,5 @@ int main(int argc, char ** argv) {
     }
     
     // Remove files now, they were only temporary
-    delete_temp_chunk_files(chunk_sizes);
+    delete_temp_chunk_files(input_filename, chunk_sizes);
 }

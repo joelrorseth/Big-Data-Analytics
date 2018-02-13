@@ -28,6 +28,24 @@
 // basket with some number of elements, encoded as integers. Each row is sorted.
 
 
+// Write the pairs and frequencies to a space delimited text file
+void write_pairs(const std::map<std::pair<int,int>,int> & pairs,
+                 const std::string & filename, const int thresh) {
+    
+    auto new_filename = "./results/a_priori/support" + std::to_string(thresh) + '_' + filename;
+    std::ofstream out_file;
+    out_file.open(new_filename);
+    
+    // Write {i,j,count(i,j)} all stored in 'pairs'
+    for (const auto & p: pairs)
+        out_file << p.first.first << ' ' << p.first.second << ' '
+        << p.second << '\n';
+    
+    out_file.close();
+    std::cout << "Written to " << new_filename << std::endl;
+}
+
+
 // Translate triangular matrix i,j into linear array index
 int tri_to_lin_idx(int i, int j, int n) {
     return (n * i) + j - ((i * (i + 1)) /2);
@@ -109,7 +127,7 @@ void find_pairs_freq_items(const std::string & filename,
         std::unordered_set<int> & freq_items,
         std::unordered_map<int,int> & item_to_index_lookup,
         std::unordered_map<int,int> & index_to_item_lookup,
-        int num_freq_items) {
+        const int num_freq_items, const int thresh) {
 
     std::ifstream in_file(filename);
     std::string line;
@@ -180,7 +198,6 @@ void find_pairs_freq_items(const std::string & filename,
         
         std::cout << index_to_item_lookup[result.first] << ','
             << index_to_item_lookup[result.second]
-            //<< " aka " << result.first << ',' << result.second
             << "  \t" << tri_matrix[i] << '\n';
     }
         
@@ -191,8 +208,9 @@ void find_pairs_freq_items(const std::string & filename,
     for (const auto & c: pair_hist)
         std::cout << c.first.first << ',' << c.first.second
             << "  \t" << c.second << '\n';
-
-    std::cout << std::endl;
+    
+    // Uncomment to write results to file for given input set
+    //write_pairs(pair_hist, filename, thresh);
 }
 
 
@@ -233,5 +251,5 @@ int main(int argc, char ** argv) {
 
     // Pass 2: Print occurrence count of each pair determined to be frequent
     find_pairs_freq_items(filename, freq_items, item_to_index_lookup,
-        index_to_item_lookup, num_freq_items);
+        index_to_item_lookup, num_freq_items, thresh_percent);
 }
