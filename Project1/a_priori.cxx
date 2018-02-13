@@ -210,7 +210,7 @@ void find_pairs_freq_items(const std::string & filename,
             << "  \t" << c.second << '\n';
     
     // Uncomment to write results to file for given input set
-    //write_pairs(pair_hist, filename, thresh);
+    write_pairs(pair_hist, filename, thresh);
 }
 
 

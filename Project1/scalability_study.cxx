@@ -75,15 +75,16 @@ void delete_temp_chunk_files(const std::string & filename,
 // Main line graph generation algorithm
 int main(int argc, char ** argv) {
     
-    if (argc != 4) {
-        std::cout << "Usage: " << argv[0] << " <input.txt> <a_priori.cxx> <pcy.cxx>\n";
+    if (argc != 5) {
+        std::cout << "Usage: " << argv[0] << " <input.txt> <a_priori.cxx> <pcy.cxx> <multistage.cxx>\n";
         return 1;
     }
     
     const std::string input_filename{argv[1]};
     const std::string a_priori_file{argv[2]};
     const std::string pcy_file{argv[3]};
-    const std::vector<std::string> algorithms{a_priori_file, pcy_file};
+    const std::string multistage_file{argv[4]};
+    const std::vector<std::string> algorithms{a_priori_file, pcy_file, multistage_file};
     
     std::vector<int> thresholds{1,5,10};
     std::vector<int> chunk_sizes{1,5,10,20,30,40,50,60,70,80,90,100};
@@ -106,6 +107,7 @@ int main(int argc, char ** argv) {
         
         std::vector<std::pair<int,int>> points_ap;
         std::vector<std::pair<int,int>> points_pcy;
+        std::vector<std::pair<int,int>> points_multistage;
         
         // Compare runtime for A-Priori algorithm vs PCY
         for (auto i = 0; i < algorithms.size(); ++i) {
@@ -136,14 +138,17 @@ int main(int argc, char ** argv) {
                 // Put {size, dif} into points vector
                 if (i == 0)
                     points_ap.push_back( std::make_pair(size, dif_mseconds) );
-                else
+                else if (i == 1)
                     points_pcy.push_back( std::make_pair(size, dif_mseconds) );
+                else
+                    points_multistage.push_back( std::make_pair(size, dif_mseconds) );
             }
         }
         
         // Plot chunk_size, runtime pair on current line chart
         gp << "plot" << gp.file1d(points_ap) << " title \"A-Priori\" with lines, "
-            << gp.file1d(points_pcy) << " title \"Multistage\" with lines\n";
+            << gp.file1d(points_pcy) << " title \"PCY\" with lines, "
+            << gp.file1d(points_multistage) << " title \"Multistage\" with lines\n";
     }
     
     // Remove files now, they were only temporary

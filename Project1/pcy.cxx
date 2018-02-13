@@ -1,6 +1,6 @@
 //
-//  Multistage PCY
-//  3 Pass Multistage approach w/ bitmaps and efficient storage
+//  PCY
+//  Regular PCY, 2 Pass approach
 //
 //  Joel Rorseth 104407927
 //  February 13, 2018
@@ -124,79 +124,11 @@ int pass_1(const std::string & filename, std::unordered_set<int> & freq_items,
 
 
 // Pass 2 -- Find pairs where i,j both freq, {i,j} hashes to freq bucket
-// Use a second hash to make another hash table, returning bitmap in-between passes
+// Use frequent items and bitmap to filter to pairs in both
 
 void pass_2(const std::string & filename,
             const std::unordered_set<int> & freq_items,
             const std::bitset<NUM_BUCKETS> & pass1_bitmap,
-            std::bitset<NUM_BUCKETS> & pass2_bitmap,
-            int support_cutoff) {
-    
-    
-    std::ifstream in_file(filename);
-    std::string line;
-    int num, line_count;
-    
-    // Second hash table, actually a vector since hash is 0...NUM_BUCKETS
-    std::vector<int> buckets(NUM_BUCKETS, 0);
-    
-    // MARK: Pass 2
-    while (std::getline(in_file, line)) {
-        
-        ++line_count;
-        
-        // Use stringstream to convert line into stream, read using >>
-        std::stringstream ss(line);
-        std::vector<int> basket;
-        
-        // Increment the element histogram
-        while (ss >> num) {
-            basket.push_back(num);
-        }
-        
-        
-        // For each distinct pair in the current basket
-        for (auto i = basket.begin(); i != basket.end(); ++i) {
-            for (auto j = (i+1); j != basket.end(); ++j) {
-                
-                // If pair hashes to freq bucket (Pass 1) and items are freq...
-                if (freq_items.find(*i) != freq_items.end() &&
-                    freq_items.find(*j) != freq_items.end() &&
-                    pass1_bitmap[ hash_fn_1(*i, *j) ] == 1 &&
-                    *i != *j) {
-                    
-                    // Use another hash function to conglomerate buckets
-                    auto hash_val = hash_fn_2(*i, *j);
-                    ++buckets[hash_val];
-                }
-            }
-        }
-    }
-    
-    in_file.close();
-    
-    // MARK: In-between Pass 2&3
-    
-    // Remove hash table and transform into bitmap for new bucket hashing
-    for (auto i = 0; i < buckets.size(); ++i) {
-        if (buckets[i] >= support_cutoff) {
-            
-            // Bucket index i in the bit vector (size NUM_BUCKETS) is set
-            pass2_bitmap.set(i);
-            //std::cout << i << ' ';
-        }
-    }
-}
-
-
-
-// Pass 3 -- Find final frequents pairs and their occurrence count
-// Only keep {i,j} whom are both freq, and together hashed to freq buckets on Pass 1&2
-
-void pass_3(const std::string & filename,
-            const std::unordered_set<int> & freq_items,
-            const std::bitset<NUM_BUCKETS> & pass1_bitmap,
-            std::bitset<NUM_BUCKETS> & pass2_bitmap,
             const int thresh) {
     
     
@@ -204,10 +136,10 @@ void pass_3(const std::string & filename,
     std::string line;
     int num, line_count;
     
-    // Final Pass 3 candidate pairs, in form of triples i,j,count
+    // Final Pass, find candidate pairs in form of triples i,j,count
     std::map<std::pair<int,int>,int> candidate_pairs;
     
-    // MARK: Pass 3
+    // MARK: Pass 2
     while (std::getline(in_file, line)) {
         
         ++line_count;
@@ -230,7 +162,6 @@ void pass_3(const std::string & filename,
                 if (freq_items.find(*i) != freq_items.end() &&
                     freq_items.find(*j) != freq_items.end() &&
                     pass1_bitmap[ hash_fn_1(*i, *j) ] == 1 &&
-                    pass2_bitmap[ hash_fn_2(*i, *j) ] == 1 &&
                     *i != *j) {
                     
                     // Increase count in hashtable for the pair {i,j}
@@ -251,7 +182,7 @@ void pass_3(const std::string & filename,
     }
     
     // Uncomment to write results to file
-    // write_pairs(candidate_pairs, filename, thresh);
+    write_pairs(candidate_pairs, filename, thresh);
 }
 
 
@@ -272,12 +203,8 @@ int main(int argc, char ** argv) {
     std::bitset<NUM_BUCKETS> pass1_bitmap;
     
     // Pass 1: Get/set item counts / freq items, freq pairs and bitmap
-    int thresh = pass_1(filename, freq_items, pass1_bitmap, thresh_percent);
+    pass_1(filename, freq_items, pass1_bitmap, thresh_percent);
     
-    // Obtain bitmap for Pass 2
-    std::bitset<NUM_BUCKETS> pass2_bitmap;
-    pass_2(filename, freq_items, pass1_bitmap, pass2_bitmap, thresh);
-    
-    // Perform final pass using all bitmaps, frequent items
-    pass_3(filename, freq_items, pass1_bitmap, pass2_bitmap, thresh_percent);
+    // Obtain final pairs using frequent items and bitmap from Pass 1
+    pass_2(filename, freq_items, pass1_bitmap, thresh_percent);
 }
